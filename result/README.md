@@ -1,0 +1,1 @@
+A simple implementation of `Result[T]` that mimicks [`Result<T,E>` from Rust](https://doc.rust-lang.org/std/result/).
