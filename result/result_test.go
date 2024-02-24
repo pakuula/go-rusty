@@ -2,6 +2,8 @@ package result_test
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"testing"
 
 	"github.com/pakuula/go-rusty/result"
@@ -37,4 +39,35 @@ func TestCTOR(t *testing.T) {
 		assert.Equal(t, 5, e.UnwrapOr(5))
 	}
 
+}
+
+func BenchmarkCatch(b *testing.B) {
+	sample := func() (res result.Result[[]int]) {
+		defer result.Catch(&res)
+
+		slice := []int{}
+		for i := 0; i < 1000; i++ {
+			r := rand.Int()
+			slice = append(slice, r)
+		}
+		result.Err[[]int](fmt.Errorf("some error")).Must()
+		return result.Val(slice)
+	}
+	for i := 0; i < b.N; i++ {
+		sample()
+	}
+}
+
+func BenchmarkReturn(b *testing.B) {
+	sample := func() ([]int, error) {
+		slice := []int{}
+		for i := 0; i < 1000; i++ {
+			r := rand.Int()
+			slice = append(slice, r)
+		}
+		return slice, fmt.Errorf("some error")
+	}
+	for i := 0; i < b.N; i++ {
+		sample()
+	}
 }
