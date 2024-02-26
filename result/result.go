@@ -3,6 +3,7 @@ package result
 import (
 	"encoding"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -37,6 +38,8 @@ func Err[T any](err error) Result[T] {
 
 type _Void struct{}
 
+type ResultVoid = Result[_Void]
+
 func Void(err error) Result[_Void] {
 	return Wrap(_Void{}, err)
 }
@@ -52,7 +55,7 @@ type hasToString interface {
 // If T has String method, calls String
 // If T has ToString method, calls ToString
 // If T has MarshalText method, calls MarshalText
-// Otherwise calls fmt.Sprint(self.value)
+// Otherwise calls fmt.Sprint(self.Unwrap())
 func (self Result[T]) String() string {
 	if self.IsError() {
 		return "error: " + self.Err().Error()
@@ -129,7 +132,7 @@ func Catch[T any](res *Result[T]) {
 	}
 }
 
-// Defer Catch(&err) to convert failed invocation of Must into Result
+// Defer Catch(&err) to convert failed invocation of Must into error
 func CatchError(errorPtr *error) {
 	if panicValue := recover(); panicValue != nil {
 		err, ok := panicValue.(checkError)
@@ -143,11 +146,35 @@ func CatchError(errorPtr *error) {
 
 // Extracting the stored value
 
+// Extracts the stored value or panics with a catchable value.
 func (self Result[T]) Must() T {
 	if self.IsError() {
 		panic(checkError{self.err})
 	}
 	return self.value
+}
+
+// Extracts the stored value or panics with a catchable string.
+//
+// The string is appended with 'error: <error's Error() method result>'
+func (self Result[T]) Mustf(format string, a ...any) T {
+	if self.IsError() {
+		msg := fmt.Sprintf(format, a...)
+		if msg != "" {
+			msg += ": "
+		}
+		msg += "error: " + self.err.Error()
+		panic(checkError{errors.New(msg)})
+	}
+	return self.value
+}
+
+// Returns the value of panics with the catchable value.
+func Must[T any](val T, err error) T {
+	if err != nil {
+		panic(checkError{err})
+	}
+	return val
 }
 
 // Returns the stored value or panics with the given message
@@ -292,12 +319,14 @@ func ApplyResult[T any, U any](from Result[T], f func(T) Result[U]) Result[U] {
 
 // Utility functions
 
+// Unmarshal JSON data into a value of the type T or error
 func UnmarshalJson[T any](data []byte) Result[T] {
 	var result T
 	err := json.Unmarshal(data, &result)
 	return Wrap(result, err)
 }
 
+// Unmarshal JSON string into a value of the type T or error
 func UnmarshalJsonString[T any](data string) Result[T] {
 	return UnmarshalJson[T]([]byte(data))
 }
