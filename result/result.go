@@ -280,10 +280,15 @@ func Ptr[T any](res *Result[T]) Result[*T] {
 	return Val(&res.value)
 }
 
+var ErrDerefNil = errors.New("derefencing nil")
+
 // Derefences Result[*T] - produces Result[T]
 func Deref[T any](res Result[*T]) Result[T] {
 	if res.IsError() {
 		return Err[T](res.err)
+	}
+	if res.value == nil {
+		return Err[T](ErrDerefNil)
 	}
 	return Val(*res.value)
 }
