@@ -177,6 +177,13 @@ func Must[T any](val T, err error) T {
 	return val
 }
 
+// In the case of error panics with the catchable value.
+func NoError(err error) {
+	if err != nil {
+		panic(checkError{err})
+	}
+}
+
 // Returns the stored value or panics with the given message
 func (self Result[T]) Expect(msg string) T {
 	if self.IsError() {
