@@ -88,3 +88,53 @@ values and writes `None` to the returned option `res`.
 The constructor `Option.Some[T](value T)` builds a `Option[T]` with the given value.
 
 [More about `Option[T]`](./option/README.md)
+
+# If expression
+
+Rust has *`if` expression*:
+```rust
+let y = if 12 * 15 > 150 {
+    "Bigger"
+} else {
+    "Smaller"
+};
+```
+
+The function `expr.If` mimics this semantics:
+```go
+y := expr.If(12 * 15 > 150 , "Bigger", "Smaller")
+```
+
+It is a convenient shorthand for the traditional go syntax 
+```go
+var y string
+if 12 * 15 > 150 {
+    y = "Bigger"
+} else {
+    y = "Smaller"
+}
+```
+
+## Lazy expression
+
+The function `expr.If` exaluates both branches of the `if-then-else` expression. It is undesirable when the
+branches have side effects:
+```go
+var body []byte
+var err error
+if FileExists(configFile) {
+	body, err = os.ReadFile(configFile)
+} else {
+	body, err = json.Marshal(DefaultConfig())
+}
+```
+
+The plain `expr.If` can't be used to replace the `if` statement. Use `expr.IfLazy` or `expr.IfLazyE` instead:
+```go
+body, err := expr.LazyE(
+	FileExists(configFile),
+	func () ([]byte, error) { os.ReadFile(configFile) }
+	func () ([]byte, error) { json.Marshal(DefaultConfig()) }
+)
+```
+The function `IfLazyE` delays branch evaluation and executes it only when needed.
