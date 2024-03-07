@@ -178,10 +178,11 @@ func Must[T any](val T, err error) T {
 }
 
 // In the case of error panics with the catchable value.
-func NoError(err error) {
+func NoError(err error) ResultVoid {
 	if err != nil {
 		panic(checkError{err})
 	}
+	return Void(nil)
 }
 
 // Returns the stored value or panics with the given message
