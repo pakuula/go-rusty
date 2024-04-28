@@ -348,6 +348,18 @@ func UnmarshalJsonString[T any](data string) Result[T] {
 	return UnmarshalJson[T]([]byte(data))
 }
 
+// Marshal a value of the type T into JSON or error
+func MarshalJson[T any](val T) Result[json.RawMessage] {
+	bz, err := json.Marshal(val)
+	return Wrap(json.RawMessage(bz), err)
+}
+
+// Marshal a value of the type T into indented JSON or error
+func MarshalIndentJson[T any](val T, prefix string, indent string) Result[json.RawMessage] {
+	bz, err := json.MarshalIndent(val, prefix, indent)
+	return Wrap(json.RawMessage(bz), err)
+}
+
 // Iterator
 
 func MapE[T any, U any](slice []T, f func(T) (U, error)) []Result[U] {
